@@ -3,13 +3,10 @@ Streamlit application for the CS Knowledge Hub - An intelligent assistant for Co
 """
 
 import streamlit as st
-import os
+from io import BytesIO
 from datetime import datetime
 from chatbot import Chatbot
-from utils import save_chat_history, validate_question
-
-# Ensure the output directory exists
-os.makedirs('outputs', exist_ok=True)
+from utils import save_chat_history_to_memory, validate_question
 
 # Page configuration
 st.set_page_config(
@@ -91,14 +88,22 @@ CS Knowledge Hub is your intelligent assistant for all things Computer Science! 
 - Reliable knowledge base
 """)
 
-# Export functionality
-if st.sidebar.button("Export Chat History (PDF)"):
+# Download functionality
+if st.sidebar.button("Download Chat History (PDF)"):
     if st.session_state.chat_history:
-        filename = f"outputs/chat_history.pdf"
-        save_chat_history(st.session_state.chat_history, filename)
-        st.sidebar.success(f"Chat history exported to {filename}")
+        # Generate the chat history PDF in memory
+        pdf_data = save_chat_history_to_memory(st.session_state.chat_history)
+
+        # Display download button
+        st.sidebar.download_button(
+            label="Download Chat History (PDF)",
+            data=pdf_data,
+            file_name="chat_history.pdf",
+            mime="application/pdf"
+        )
     else:
-        st.sidebar.warning("No chat history to export!")
+        st.sidebar.warning("No chat history to download!")
+
 
 # Clear chat history
 if st.sidebar.button("Clear Chat History"):
