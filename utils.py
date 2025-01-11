@@ -6,72 +6,48 @@ import logging
 from typing import List, Dict
 from fpdf import FPDF
 import textwrap
+from io import BytesIO
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def save_chat_history(chat_history: List[Dict[str, str]], filename: str):
+def save_chat_history_to_memory(chat_history):
     """
-    Save chat history to a PDF file.
-    
+    Save chat history to a PDF in memory.
+
     Args:
-        chat_history (List[Dict[str, str]]): List of chat messages
-        filename (str): Output filename (should end with .pdf)
+        chat_history (list): List of chat messages.
+
+    Returns:
+        BytesIO: In-memory PDF data.
     """
-    try:
-        # Create PDF object
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
-        
-        # Set margins
-        pdf.set_left_margin(20)
-        pdf.set_right_margin(20)
-        
-        # Add title
-        pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, "Chat History", ln=True, align='C')
-        pdf.ln(10)
-        
-        # Reset font for content
-        pdf.set_font("Arial", size=12)
-        
-        # Process chat history
-        for i in range(0, len(chat_history), 2):
-            if i + 1 < len(chat_history):
-                # Get question and answer
-                question = chat_history[i]['text']
-                answer = chat_history[i + 1]['text']
-                
-                # Add question
-                pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 10, "Question:", ln=True)
-                pdf.set_font("Arial", size=12)
-                
-                # Wrap text to fit page width
-                wrapped_question = textwrap.fill(question, width=80)
-                for line in wrapped_question.split('\n'):
-                    pdf.cell(0, 10, line, ln=True)
-                pdf.ln(5)
-                
-                # Add answer
-                pdf.set_font("Arial", 'B', 12)
-                pdf.cell(0, 10, "Response by Chatbot:", ln=True)
-                pdf.set_font("Arial", size=12)
-                
-                # Wrap text to fit page width
-                wrapped_answer = textwrap.fill(answer, width=80)
-                for line in wrapped_answer.split('\n'):
-                    pdf.cell(0, 10, line, ln=True)
-                pdf.ln(10)
-        
-        # Save PDF
-        pdf_filename = filename if filename.endswith('.pdf') else f"{filename}.pdf"
-        pdf.output(pdf_filename)
-        logger.info(f"Chat history saved to {pdf_filename}")
-        
-    except Exception as e:
-        logger.error(f"Error saving chat history: {str(e)}")
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    # Title
+    pdf.set_font("Arial", "B", size=14)
+    pdf.cell(200, 10, txt="Chat History", ln=True, align="C")
+    pdf.ln(10)
+
+    # Chat content
+    pdf.set_font("Arial", size=12)
+    for message in chat_history:
+        if message["is_user"]:
+            pdf.set_text_color(0, 0, 255)  # Blue for user messages
+            pdf.multi_cell(0, 10, f"User: {message['text']}")
+        else:
+            pdf.set_text_color(0, 128, 0)  # Green for bot messages
+            pdf.multi_cell(0, 10, f"Assistant: {message['text']}")
+        pdf.ln(5)
+
+    # Write PDF content to a BytesIO stream
+    pdf_data = BytesIO()
+    pdf_string = pdf.output(dest="S").encode("latin1")  # Output PDF as string and encode it
+    pdf_data.write(pdf_string)
+    pdf_data.seek(0)  # Reset stream pointer to the beginning
+
+    return pdf_data
 
 def format_message(message: str, is_user: bool = True) -> str:
     """
