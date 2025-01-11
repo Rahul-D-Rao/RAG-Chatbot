@@ -58,7 +58,7 @@ if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'chatbot' not in st.session_state:
     try:
-        st.session_state.chatbot = Chatbot('Input_dataset.json')
+        st.session_state.chatbot = Chatbot('Input_Dataset.json')
         st.session_state.chatbot.initialize()
     except Exception as e:
         st.error(f"Error initializing chatbot: {str(e)}")
